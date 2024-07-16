@@ -1,15 +1,15 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import Joi from 'joi';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import databaseConfig from './config/database.config';
+import { getTypeOrmConfig } from './config/database.config';
 import { StationModule } from './station/station.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      load: [databaseConfig],
       cache: true,
       validationSchema: Joi.object({
         NODE_ENV: Joi.string()
@@ -22,6 +22,12 @@ import { StationModule } from './station/station.module';
       },
     }),
     StationModule,
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) =>
+        getTypeOrmConfig(configService),
+    }),
   ],
   controllers: [AppController],
   providers: [AppService],
