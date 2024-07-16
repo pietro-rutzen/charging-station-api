@@ -4,7 +4,6 @@ import Joi from 'joi';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import databaseConfig from './config/database.config';
-import { StationController } from './station/station.controller';
 import { StationModule } from './station/station.module';
 
 @Module({
@@ -19,13 +18,12 @@ import { StationModule } from './station/station.module';
         PORT: Joi.number().port().default(3000),
       }),
       validationOptions: {
-        allowUnknown: false,
         abortEarly: true,
       },
     }),
     StationModule,
   ],
-  controllers: [AppController, StationController],
+  controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule {}
