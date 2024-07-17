@@ -1,29 +1,9 @@
-import { EntitySchema } from 'typeorm';
-import { Station } from '../entities/station.entity';
+import * as mongoose from 'mongoose';
 
-export const StationSchema = new EntitySchema<Station>({
-  name: 'Station',
-  target: Station,
-  columns: {
-    id: {
-      type: Number,
-      primary: true,
-      generated: true,
-    },
-    name: {
-      type: String,
-    },
-    latitude: {
-      type: Number,
-    },
-    longitude: {
-      type: Number,
-    },
-    company_id: {
-      type: Number,
-    },
-    address: {
-      type: String,
-    },
-  },
+export const StationSchema = new mongoose.Schema({
+  name: String,
+  latitude: Number,
+  longitude: Number,
+  company_id: Number,
+  address: String,
 });

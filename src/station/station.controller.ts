@@ -27,16 +27,20 @@ export class StationController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.stationService.findOne(+id);
+    return this.stationService.findOne(id);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateStationDto: UpdateStationDto) {
-    return this.stationService.update(+id, updateStationDto);
+    return this.stationService
+      .update(id, updateStationDto)
+      .then((updatedStation) => {
+        return this.stationService.findOne(updatedStation.id);
+      });
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.stationService.remove(+id);
+    return this.stationService.remove(id);
   }
 }
