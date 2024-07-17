@@ -32,11 +32,7 @@ export class StationController {
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateStationDto: UpdateStationDto) {
-    return this.stationService
-      .update(id, updateStationDto)
-      .then((updatedStation) => {
-        return this.stationService.findOne(updatedStation.id);
-      });
+    return this.stationService.update(id, updateStationDto);
   }
 
   @Delete(':id')
