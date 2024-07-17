@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { MongooseModule } from '@nestjs/mongoose';
 import Joi from 'joi';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { getTypeOrmConfig } from './config/database.config';
+import { getMongooseConfig } from './config/database.config';
 import { StationModule } from './station/station.module';
 
 @Module({
@@ -22,11 +22,11 @@ import { StationModule } from './station/station.module';
       },
     }),
     StationModule,
-    TypeOrmModule.forRootAsync({
+    MongooseModule.forRootAsync({
       imports: [ConfigModule],
-      inject: [ConfigService],
       useFactory: (configService: ConfigService) =>
-        getTypeOrmConfig(configService),
+        getMongooseConfig(configService),
+      inject: [ConfigService],
     }),
   ],
   controllers: [AppController],
