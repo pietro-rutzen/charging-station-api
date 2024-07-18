@@ -1,4 +1,9 @@
-import { Inject, Injectable } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Model } from 'mongoose';
 import { STATION_MODEL } from '../constants';
 import { CreateStationDto } from './dto/create-station.dto';
@@ -11,26 +16,82 @@ export class StationService {
     @Inject(STATION_MODEL)
     private stationModel: Model<Station>,
   ) {}
-  create(createStationDto: CreateStationDto): Promise<Station> {
+  async create(createStationDto: CreateStationDto): Promise<Station> {
     const createdStation = new this.stationModel(createStationDto);
-    return createdStation.save();
+    try {
+      return await createdStation.save();
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException('Failed to create station');
+    }
   }
 
   findAll(): Promise<Station[]> {
-    return this.stationModel.find().exec();
+    try {
+      return this.stationModel.find().exec();
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException(`Failed to find stations`, {
+        cause: error.message,
+      });
+    }
   }
 
-  findOne(id: string): Promise<Station> {
-    return this.stationModel.findById(id).exec();
+  async findOne(id: string): Promise<Station> {
+    try {
+      const station = await this.stationModel.findById(id).exec();
+      if (!station) {
+        throw new NotFoundException(`Station with ID ${id} not found`);
+      }
+      return station;
+    } catch (error) {
+      console.error(error);
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(`Failed to find station`, {
+        cause: error.message,
+      });
+    }
   }
 
-  update(id: string, updateStationDto: UpdateStationDto) {
-    return this.stationModel
-      .findByIdAndUpdate(id, updateStationDto, { new: true })
-      .exec();
+  async update(id: string, updateStationDto: UpdateStationDto) {
+    try {
+      const updatedStation = await this.stationModel
+        .findByIdAndUpdate(id, updateStationDto, { new: true })
+        .exec();
+      if (!updatedStation) {
+        throw new NotFoundException(`Station with ID ${id} not found`);
+      }
+      return updatedStation;
+    } catch (error) {
+      console.error(error);
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(`Failed to update station`, {
+        cause: error.message,
+      });
+    }
   }
 
-  remove(id: string) {
-    return this.stationModel.findByIdAndDelete(id).exec();
+  async remove(id: string) {
+    try {
+      const deletedStation = await this.stationModel
+        .findByIdAndDelete(id)
+        .exec();
+      if (!deletedStation) {
+        throw new NotFoundException(`Station with ID ${id} not found`);
+      }
+      return deletedStation;
+    } catch (error) {
+      console.error(error);
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(`Failed to delete station`, {
+        cause: error.message,
+      });
+    }
   }
 }
