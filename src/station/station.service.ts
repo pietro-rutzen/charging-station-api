@@ -99,19 +99,47 @@ export class StationService {
 
   async findNear(latitude: number, longitude: number, radius: number) {
     // const childCompanyIds = await this.companyService.getAllChildCompanyIds();
+
     const maxDistance = radius * 1000;
+
     const stations = await this.stationModel
-      .find({
-        location: {
-          $near: {
-            $geometry: {
+      .aggregate([
+        {
+          $geoNear: {
+            near: {
               type: 'Point',
               coordinates: [longitude, latitude],
             },
-            $maxDistance: maxDistance,
+            distanceField: 'distance',
+            maxDistance: maxDistance,
+            spherical: true,
           },
         },
-      })
+        {
+          $group: {
+            _id: '$location.coordinates',
+            stations: {
+              $push: {
+                _id: '$_id',
+                name: '$name',
+                company_id: '$company_id',
+                address: '$address',
+                distance: '$distance',
+              },
+            },
+            location: { $first: '$location' },
+            count: { $sum: 1 },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            location: 1,
+            stations: 1,
+            count: 1,
+          },
+        },
+      ])
       .exec();
 
     return stations;
