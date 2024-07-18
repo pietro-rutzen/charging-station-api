@@ -4,7 +4,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { CompanyService } from 'src/company/company.service';
 import { STATION_MODEL } from '../constants';
 import { CreateStationDto } from './dto/create-station.dto';
@@ -97,8 +97,19 @@ export class StationService {
     }
   }
 
-  async findNear(latitude: number, longitude: number, radius: number) {
-    // const childCompanyIds = await this.companyService.getAllChildCompanyIds();
+  async findNear(
+    latitude: number,
+    longitude: number,
+    radius: number,
+    companyId: string,
+  ) {
+    const childCompanyIds =
+      await this.companyService.getAllChildCompanyIds(companyId);
+
+    const parentAndChildCompanyIds = [
+      new Types.ObjectId(companyId),
+      ...childCompanyIds,
+    ];
 
     const maxDistance = radius * 1000;
 
@@ -113,6 +124,11 @@ export class StationService {
             distanceField: 'distance',
             maxDistance: maxDistance,
             spherical: true,
+          },
+        },
+        {
+          $match: {
+            company_id: { $in: parentAndChildCompanyIds },
           },
         },
         {
@@ -137,6 +153,11 @@ export class StationService {
             location: 1,
             stations: 1,
             count: 1,
+          },
+        },
+        {
+          $sort: {
+            'stations.distance': 1,
           },
         },
       ])

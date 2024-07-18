@@ -33,8 +33,9 @@ export class StationController {
     @Query('lat', ParseFloatPipe) lat: number,
     @Query('lng', ParseFloatPipe) lng: number,
     @Query('radius', ParseIntPipe) radius: number,
+    @Query('company_id') companyId: string,
   ) {
-    return this.stationService.findNear(lat, lng, radius);
+    return this.stationService.findNear(lat, lng, radius, companyId);
   }
 
   @Get(':id')

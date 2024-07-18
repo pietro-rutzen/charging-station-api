@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Model, ObjectId } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { COMPANY_MODEL } from 'src/constants';
 import { Company } from './interfaces/company.interface';
 
@@ -11,26 +11,38 @@ export class CompanyService {
   ) {}
 
   async getAllChildCompanyIds(parentCompanyId: string): Promise<string[]> {
-    const companyIds = new Set<string>();
+    const result = await this.companyModel
+      .aggregate([
+        {
+          $match: { _id: new Types.ObjectId(parentCompanyId) },
+        },
+        {
+          $graphLookup: {
+            from: 'companies',
+            startWith: '$_id',
+            connectFromField: '_id',
+            connectToField: 'parent_company_id',
+            as: 'allChildren',
+          },
+        },
+        {
+          $project: {
+            allChildren: {
+              $map: {
+                input: '$allChildren',
+                as: 'child',
+                in: { $toString: '$$child._id' },
+              },
+            },
+          },
+        },
+      ])
+      .exec();
 
-    const fetchChildCompanies = async (companyId: string) => {
-      const childCompanies = (
-        await this.companyModel
-          .find({ parent_company_id: companyId })
-          .distinct('_id')
-          .exec()
-      ).map((_id: ObjectId) => String(_id));
-
-      for (const childCompanyId of childCompanies) {
-        if (!companyIds.has(childCompanyId)) {
-          companyIds.add(childCompanyId);
-          await fetchChildCompanies(childCompanyId);
-        }
-      }
-    };
-
-    await fetchChildCompanies(parentCompanyId);
-
-    return Array.from(companyIds);
+    if (result.length > 0) {
+      return result[0].allChildren.map((id: string) => new Types.ObjectId(id));
+    } else {
+      return [];
+    }
   }
 }
