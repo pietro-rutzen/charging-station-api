@@ -74,14 +74,14 @@ async function seedDatabase() {
 
   // Function to generate random coordinates within a 0 to 30 km radius around a given point
   const getRandomCoordinates = (centerLat, centerLon) => {
-    const radius = Math.random() * 30000; // Distance between 0m and 30000m (0km to 30km)
+    const radius = Math.random() * 3000; // Distance between 0m and 30000m (0km to 30km)
     const randomPoint = geolib.computeDestinationPoint(
       { latitude: centerLat, longitude: centerLon },
       radius,
       Math.random() * 360, // Random bearing
     );
 
-    return [randomPoint.latitude, randomPoint.longitude];
+    return [randomPoint.longitude, randomPoint.latitude];
   };
 
   const addresses = [
