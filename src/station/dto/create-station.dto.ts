@@ -4,4 +4,8 @@ export class CreateStationDto {
   readonly longitude: number;
   readonly company_id: number;
   readonly address: string;
+  readonly location: {
+    type: 'Point';
+    coordinates: [number, number];
+  };
 }
