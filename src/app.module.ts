@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import Joi from 'joi';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { CompanyModule } from './company/company.module';
 import { StationModule } from './station/station.module';
 
 @Module({
@@ -20,6 +21,7 @@ import { StationModule } from './station/station.module';
       },
       isGlobal: true,
     }),
+    CompanyModule,
     StationModule,
   ],
   controllers: [AppController],

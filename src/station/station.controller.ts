@@ -4,8 +4,11 @@ import {
   Delete,
   Get,
   Param,
+  ParseFloatPipe,
+  ParseIntPipe,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { CreateStationDto } from './dto/create-station.dto';
 import { UpdateStationDto } from './dto/update-station.dto';
@@ -23,6 +26,15 @@ export class StationController {
   @Get()
   findAll() {
     return this.stationService.findAll();
+  }
+
+  @Get('near')
+  findNear(
+    @Query('lat', ParseFloatPipe) lat: number,
+    @Query('lng', ParseFloatPipe) lng: number,
+    @Query('radius', ParseIntPipe) radius: number,
+  ) {
+    return this.stationService.findNear(lat, lng, radius);
   }
 
   @Get(':id')

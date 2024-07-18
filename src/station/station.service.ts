@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Model } from 'mongoose';
+import { CompanyService } from 'src/company/company.service';
 import { STATION_MODEL } from '../constants';
 import { CreateStationDto } from './dto/create-station.dto';
 import { UpdateStationDto } from './dto/update-station.dto';
@@ -15,6 +16,7 @@ export class StationService {
   constructor(
     @Inject(STATION_MODEL)
     private stationModel: Model<Station>,
+    private companyService: CompanyService,
   ) {}
   async create(createStationDto: CreateStationDto): Promise<Station> {
     const createdStation = new this.stationModel(createStationDto);
@@ -93,5 +95,25 @@ export class StationService {
         cause: error.message,
       });
     }
+  }
+
+  async findNear(latitude: number, longitude: number, radius: number) {
+    // const childCompanyIds = await this.companyService.getAllChildCompanyIds();
+    const maxDistance = radius * 1000;
+    const stations = await this.stationModel
+      .find({
+        location: {
+          $near: {
+            $geometry: {
+              type: 'Point',
+              coordinates: [longitude, latitude],
+            },
+            $maxDistance: maxDistance,
+          },
+        },
+      })
+      .exec();
+
+    return stations;
   }
 }
