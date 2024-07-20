@@ -4,20 +4,29 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
+import { encodeBase32 } from 'geohashing';
+import { Redis } from 'ioredis';
 import { Model, Types } from 'mongoose';
+import { RedisService } from 'nestjs-redis';
 import { CompanyService } from 'src/company/company.service';
-import { STATION_MODEL } from '../constants';
+import { ONE_HOUR_IN_SECONDS, STATION_MODEL } from '../constants';
 import { CreateStationDto } from './dto/create-station.dto';
 import { UpdateStationDto } from './dto/update-station.dto';
 import { Station } from './interfaces/station.interface';
 
 @Injectable()
 export class StationService {
+  private readonly redisClient: Redis;
+
   constructor(
     @Inject(STATION_MODEL)
     private stationModel: Model<Station>,
     private companyService: CompanyService,
-  ) {}
+    private readonly redisService: RedisService,
+  ) {
+    this.redisClient = this.redisService.getClient();
+  }
+
   async create(createStationDto: CreateStationDto): Promise<Station> {
     const createdStation = new this.stationModel(createStationDto);
     try {
@@ -28,9 +37,22 @@ export class StationService {
     }
   }
 
-  findAll(): Promise<Station[]> {
+  async findAll(): Promise<Station[]> {
     try {
-      return this.stationModel.find().exec();
+      const cacheKey = 'stations:all';
+      const cachedData = await this.redisClient.get(cacheKey);
+      if (cachedData) {
+        return JSON.parse(cachedData);
+      }
+
+      const stations = await this.stationModel.find().exec();
+      await this.redisClient.set(
+        cacheKey,
+        JSON.stringify(stations),
+        'EX',
+        ONE_HOUR_IN_SECONDS,
+      );
+      return stations;
     } catch (error) {
       console.error(error);
       throw new InternalServerErrorException(`Failed to find stations`, {
@@ -41,10 +63,23 @@ export class StationService {
 
   async findOne(id: string): Promise<Station> {
     try {
+      const cacheKey = `station:${id}`;
+      const cachedData = await this.redisClient.get(cacheKey);
+      if (cachedData) {
+        return JSON.parse(cachedData);
+      }
+
       const station = await this.stationModel.findById(id).exec();
       if (!station) {
         throw new NotFoundException(`Station with ID ${id} not found`);
       }
+
+      await this.redisClient.set(
+        cacheKey,
+        JSON.stringify(station),
+        'EX',
+        ONE_HOUR_IN_SECONDS,
+      );
       return station;
     } catch (error) {
       console.error(error);
@@ -60,6 +95,15 @@ export class StationService {
       if (!updatedStation) {
         throw new NotFoundException(`Station with ID ${id} not found`);
       }
+
+      const cacheKey = `station:${id}`;
+      await this.redisClient.set(
+        cacheKey,
+        JSON.stringify(updatedStation),
+        'EX',
+        ONE_HOUR_IN_SECONDS,
+      ); // Update cache
+
       return updatedStation;
     } catch (error) {
       console.error(error);
@@ -75,6 +119,10 @@ export class StationService {
       if (!deletedStation) {
         throw new NotFoundException(`Station with ID ${id} not found`);
       }
+
+      const cacheKey = `station:${id}`;
+      await this.redisClient.del(cacheKey); // Remove from cache
+
       return deletedStation;
     } catch (error) {
       console.error(error);
@@ -89,6 +137,18 @@ export class StationService {
     companyId: string,
   ) {
     try {
+      const precision = 6;
+      // Precision of a Geohash Base32 string is defined by the string length, which must be between 1 and 9.
+      // https://github.com/arseny034/geohashing?tab=readme-ov-file#support-of-two-geohash-formats
+      const geohashKey = encodeBase32(latitude, longitude, precision);
+      const cacheKey = `stations:near:${geohashKey}:${radius}:${companyId}`;
+      // Basically supposed to turn lat/long into a string that we can use as key in Redis
+      // In the perfect world this would be a prefix that we can use to find all stations near a certain location
+      const cachedData = await this.redisClient.get(cacheKey);
+      if (cachedData) {
+        return JSON.parse(cachedData);
+      }
+
       const childCompanyIds =
         await this.companyService.getAllChildCompanyIds(companyId);
 
@@ -148,6 +208,13 @@ export class StationService {
           },
         ])
         .exec();
+
+      await this.redisClient.set(
+        cacheKey,
+        JSON.stringify(stations),
+        'EX',
+        ONE_HOUR_IN_SECONDS,
+      );
 
       return stations;
     } catch (error) {
