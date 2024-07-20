@@ -1,8 +1,15 @@
 import { Module } from '@nestjs/common';
-import { redisProviders } from './redis.providers';
+import { ConfigService } from '@nestjs/config';
+import { RedisModule, RedisModuleOptions } from 'nestjs-redis';
+import { getRedisConfig } from 'src/config/redis.config';
 
 @Module({
-  providers: [...redisProviders],
-  exports: [...redisProviders],
+  imports: [
+    RedisModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService): RedisModuleOptions =>
+        getRedisConfig(configService),
+    }),
+  ],
 })
 export class LocalRedisModule {}
