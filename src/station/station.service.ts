@@ -48,12 +48,7 @@ export class StationService {
       return station;
     } catch (error) {
       console.error(error);
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
-      throw new InternalServerErrorException(`Failed to find station`, {
-        cause: error.message,
-      });
+      throw error;
     }
   }
 
@@ -68,12 +63,7 @@ export class StationService {
       return updatedStation;
     } catch (error) {
       console.error(error);
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
-      throw new InternalServerErrorException(`Failed to update station`, {
-        cause: error.message,
-      });
+      throw error;
     }
   }
 
@@ -88,12 +78,7 @@ export class StationService {
       return deletedStation;
     } catch (error) {
       console.error(error);
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
-      throw new InternalServerErrorException(`Failed to delete station`, {
-        cause: error.message,
-      });
+      throw error;
     }
   }
 
@@ -103,66 +88,73 @@ export class StationService {
     radius: number,
     companyId: string,
   ) {
-    const childCompanyIds =
-      await this.companyService.getAllChildCompanyIds(companyId);
+    try {
+      const childCompanyIds =
+        await this.companyService.getAllChildCompanyIds(companyId);
 
-    const parentAndChildCompanyIds = [
-      new Types.ObjectId(companyId),
-      ...childCompanyIds,
-    ];
+      const parentAndChildCompanyIds = [
+        new Types.ObjectId(companyId),
+        ...childCompanyIds,
+      ];
 
-    const maxDistance = radius * 1000;
+      const maxDistance = radius * 1000;
 
-    const stations = await this.stationModel
-      .aggregate([
-        {
-          $geoNear: {
-            near: {
-              type: 'Point',
-              coordinates: [longitude, latitude],
-            },
-            distanceField: 'distance',
-            maxDistance: maxDistance,
-            spherical: true,
-          },
-        },
-        {
-          $match: {
-            company_id: { $in: parentAndChildCompanyIds },
-          },
-        },
-        {
-          $group: {
-            _id: '$location.coordinates',
-            stations: {
-              $push: {
-                _id: '$_id',
-                name: '$name',
-                company_id: '$company_id',
-                address: '$address',
-                distance: '$distance',
+      const stations = await this.stationModel
+        .aggregate([
+          {
+            $geoNear: {
+              near: {
+                type: 'Point',
+                coordinates: [longitude, latitude],
               },
+              distanceField: 'distance',
+              maxDistance: maxDistance,
+              spherical: true,
             },
-            location: { $first: '$location' },
-            count: { $sum: 1 },
           },
-        },
-        {
-          $project: {
-            _id: 0,
-            location: 1,
-            stations: 1,
-            count: 1,
+          {
+            $match: {
+              company_id: { $in: parentAndChildCompanyIds },
+            },
           },
-        },
-        {
-          $sort: {
-            'stations.distance': 1,
+          {
+            $group: {
+              _id: '$location.coordinates',
+              stations: {
+                $push: {
+                  _id: '$_id',
+                  name: '$name',
+                  company_id: '$company_id',
+                  address: '$address',
+                  distance: '$distance',
+                },
+              },
+              location: { $first: '$location' },
+              count: { $sum: 1 },
+            },
           },
-        },
-      ])
-      .exec();
+          {
+            $project: {
+              _id: 0,
+              location: 1,
+              stations: 1,
+              count: 1,
+            },
+          },
+          {
+            $sort: {
+              'stations.distance': 1,
+            },
+          },
+        ])
+        .exec();
 
-    return stations;
+      return stations;
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException('Failed to find stations near', {
+        cause: error.message,
+      });
+    }
   }
 }
