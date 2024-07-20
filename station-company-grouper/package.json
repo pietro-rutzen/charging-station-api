@@ -1,0 +1,22 @@
+{
+  "name": "station-company-grouper",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "rimraf dist && tsc -p tsconfig.json",
+    "start": "node dist/index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "node-fetch": "^2.7.0",
+    "rimraf": "^3.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.11",
+    "@types/node-fetch": "^2.6.11",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.3"
+  }
+}
