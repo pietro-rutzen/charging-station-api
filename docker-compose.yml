@@ -1,10 +1,34 @@
 version: '3.8'
 
 services:
-  app:
+  charging-station-api:
     build: .
     ports:
       - "3000:3000"
     environment:
       MONGODB_CONNECTION_STRING: mongodb+srv://virta-test:sUNHXIh0ft22WyZc@virta-cluster.hw2qymk.mongodb.net/?retryWrites=true&w=majority&appName=virta-cluster
       MONGODB_DATABASE: virta_db
+    networks:
+      - charger-station-api-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      interval: 5s
+      timeout: 4s
+      retries: 5
+
+  station-company-grouper:
+    build:
+      context: ./station-company-grouper
+    ports:
+      - "4000:4000"
+    networks:
+      - charger-station-api-network
+    depends_on:
+      charging-station-api:
+        condition: service_healthy
+    environment:
+      CHARGING_STATION_API_URL: http://charging-station-api:3000
+
+networks:
+  charger-station-api-network:
+    driver: bridge
