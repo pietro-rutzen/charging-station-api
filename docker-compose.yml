@@ -8,4 +8,3 @@ services:
     environment:
       MONGODB_CONNECTION_STRING: mongodb+srv://virta-test:sUNHXIh0ft22WyZc@virta-cluster.hw2qymk.mongodb.net/?retryWrites=true&w=majority&appName=virta-cluster
       MONGODB_DATABASE: virta_db
-    network_mode: host
