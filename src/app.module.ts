@@ -4,6 +4,7 @@ import Joi from 'joi';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { CompanyModule } from './company/company.module';
+import { LocalRedisModule } from './redis/redis.module';
 import { StationModule } from './station/station.module';
 
 @Module({
@@ -21,6 +22,7 @@ import { StationModule } from './station/station.module';
       },
       isGlobal: true,
     }),
+    LocalRedisModule,
     CompanyModule,
     StationModule,
   ],

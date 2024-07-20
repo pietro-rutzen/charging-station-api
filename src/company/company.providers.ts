@@ -8,6 +8,6 @@ export const companyProviders: Provider[] = [
     provide: COMPANY_MODEL,
     useFactory: (connection: Connection) =>
       connection.model('Company', CompanySchema),
-    inject: [DATABASE_CONNECTION] as never,
+    inject: [DATABASE_CONNECTION],
   },
 ];
