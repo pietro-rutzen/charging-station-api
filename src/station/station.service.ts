@@ -9,13 +9,44 @@ import { Redis } from 'ioredis';
 import { Model, Types } from 'mongoose';
 import { RedisService } from 'nestjs-redis';
 import { CompanyService } from 'src/company/company.service';
+
 import {
   ONE_HOUR_IN_SECONDS,
   STATION_MODEL,
 } from 'src/constants/application.constants';
 import { CreateStationDto } from './dto/create-station.dto';
 import { UpdateStationDto } from './dto/update-station.dto';
-import { Station } from './interfaces/station.interface';
+import { NearbyStationListItem, Station } from './interfaces/station.interface';
+
+const constructLocation = (latitude?: number, longitude?: number) => {
+  return !!latitude && !!longitude
+    ? {
+        type: 'Point',
+        coordinates: [longitude, latitude],
+      }
+    : undefined;
+};
+
+const toPlainObject = (station: any): Record<string, any> => {
+  if (station && typeof station.toObject === 'function') {
+    return station.toObject();
+  }
+  return { ...station };
+};
+
+const transformLocation = (station: Station): Station => {
+  const plainStation = toPlainObject(station);
+  if (plainStation.location && plainStation.location.coordinates) {
+    const [longitude, latitude] = plainStation.location.coordinates;
+    delete plainStation.location;
+    return {
+      ...plainStation,
+      latitude,
+      longitude,
+    } as Station;
+  }
+  return plainStation as Station;
+};
 
 @Injectable()
 export class StationService {
@@ -31,9 +62,17 @@ export class StationService {
   }
 
   async create(createStationDto: CreateStationDto): Promise<Station> {
-    const createdStation = new this.stationModel(createStationDto);
+    const createdStation = new this.stationModel(
+      Object.assign(createStationDto, {
+        location: constructLocation(
+          createStationDto.latitude,
+          createStationDto.longitude,
+        ),
+      }),
+    );
     try {
-      return await createdStation.save();
+      const savedStation = await createdStation.save();
+      return transformLocation(savedStation);
     } catch (error) {
       console.error(error);
       throw new InternalServerErrorException('Failed to create station');
@@ -45,7 +84,9 @@ export class StationService {
       const cacheKey = 'stations:all';
       const cachedData = await this.redisClient.get(cacheKey);
       if (cachedData) {
-        return JSON.parse(cachedData);
+        return JSON.parse(cachedData).map((station: Station) =>
+          transformLocation(station),
+        );
       }
 
       const stations = await this.stationModel.find().exec();
@@ -55,7 +96,7 @@ export class StationService {
         'EX',
         ONE_HOUR_IN_SECONDS,
       );
-      return stations;
+      return stations.map((station) => transformLocation(station));
     } catch (error) {
       console.error(error);
       throw new InternalServerErrorException(`Failed to find stations`, {
@@ -69,7 +110,7 @@ export class StationService {
       const cacheKey = `station:${id}`;
       const cachedData = await this.redisClient.get(cacheKey);
       if (cachedData) {
-        return JSON.parse(cachedData);
+        return transformLocation(JSON.parse(cachedData) as Station);
       }
 
       const station = await this.stationModel.findById(id).exec();
@@ -83,14 +124,17 @@ export class StationService {
         'EX',
         ONE_HOUR_IN_SECONDS,
       );
-      return station;
+      return transformLocation(station);
     } catch (error) {
       console.error(error);
       throw error;
     }
   }
 
-  async update(id: string, updateStationDto: UpdateStationDto) {
+  async update(
+    id: string,
+    updateStationDto: UpdateStationDto,
+  ): Promise<Station> {
     try {
       const updatedStation = await this.stationModel
         .findByIdAndUpdate(id, updateStationDto, { new: true })
@@ -105,16 +149,16 @@ export class StationService {
         JSON.stringify(updatedStation),
         'EX',
         ONE_HOUR_IN_SECONDS,
-      ); // Update cache
+      );
 
-      return updatedStation;
+      return transformLocation(updatedStation);
     } catch (error) {
       console.error(error);
       throw error;
     }
   }
 
-  async remove(id: string) {
+  async remove(id: string): Promise<Station> {
     try {
       const deletedStation = await this.stationModel
         .findByIdAndDelete(id)
@@ -124,9 +168,9 @@ export class StationService {
       }
 
       const cacheKey = `station:${id}`;
-      await this.redisClient.del(cacheKey); // Remove from cache
+      await this.redisClient.del(cacheKey);
 
-      return deletedStation;
+      return transformLocation(deletedStation);
     } catch (error) {
       console.error(error);
       throw error;
@@ -138,18 +182,23 @@ export class StationService {
     longitude: number,
     radius: number,
     companyId: string,
-  ) {
+  ): Promise<NearbyStationListItem[]> {
     try {
       const precision = 6;
       // Precision of a Geohash Base32 string is defined by the string length, which must be between 1 and 9.
       // https://github.com/arseny034/geohashing?tab=readme-ov-file#support-of-two-geohash-formats
       const geohashKey = encodeBase32(latitude, longitude, precision);
       const cacheKey = `stations:near:${geohashKey}:${radius}:${companyId}`;
+      const cachedData = await this.redisClient.get(cacheKey);
       // Basically supposed to turn lat/long into a string that we can use as key in Redis
       // In the perfect world this would be a prefix that we can use to find all stations near a certain location
-      const cachedData = await this.redisClient.get(cacheKey);
       if (cachedData) {
-        return JSON.parse(cachedData);
+        return JSON.parse(cachedData).map((item) => ({
+          stations: item.stations.map((station) =>
+            transformLocation({ ...station, location: item.location }),
+          ),
+          count: item.count,
+        }));
       }
 
       const childCompanyIds =
@@ -162,7 +211,7 @@ export class StationService {
 
       const maxDistance = radius * 1000;
 
-      const stations = await this.stationModel
+      const results = await this.stationModel
         .aggregate([
           {
             $geoNear: {
@@ -214,12 +263,20 @@ export class StationService {
 
       await this.redisClient.set(
         cacheKey,
-        JSON.stringify(stations),
+        JSON.stringify(results),
         'EX',
         ONE_HOUR_IN_SECONDS,
       );
 
-      return stations;
+      return results.map(
+        (item) =>
+          ({
+            stations: item.stations.map((station) =>
+              transformLocation({ ...station, location: item.location }),
+            ),
+            count: item.count,
+          }) as NearbyStationListItem,
+      );
     } catch (error) {
       console.error(error);
       throw new InternalServerErrorException('Failed to find stations near', {

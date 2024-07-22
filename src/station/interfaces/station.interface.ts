@@ -6,6 +6,12 @@ export interface Station extends Document {
   longitude: number;
   company_id: number;
   address: string;
+  location?: Location;
+}
+
+export interface NearbyStationListItem {
+  stations: Station[];
+  count: number;
 }
 
 export interface Location {

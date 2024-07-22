@@ -36,23 +36,13 @@ export const STATION_ID_QUERY = {
 const SINGLE_CHARGING_STATION_SCHEMA = {
   type: 'object',
   properties: {
-    name: { type: 'string', example: 'A Charging Station!' },
-    location: {
-      type: 'object',
-      properties: {
-        type: { type: 'string', example: 'Point' },
-        coordinates: {
-          type: 'array',
-          items: { type: 'number' },
-          example: [25.082368457670785, 60.207724972363685],
-        },
-      },
-    },
-    company_id: { type: 'string', example: '6699719eee1af6da9aa6dc44' },
-    address: {
-      type: 'string',
-      example: 'Kauppakartanonkatu 18, 00930 Helsinki',
-    },
+    _id: { type: 'string', example: '6699719eee1af6da9aa6dc56' },
+    name: { type: 'string', example: 'Charging Station 13' },
+    latitude: { type: 'number', example: 64.01682038958333 },
+    longitude: { type: 'number', example: 25.99188464054383 },
+    company_id: { type: 'string', example: '6699719eee1af6da9aa6dc45' },
+    address: { type: 'string', example: 'Mechelininkatu 10, 00100 Helsinki' },
+    distance: { type: 'number', example: 9733.085282968641 },
   },
 };
 
@@ -72,13 +62,19 @@ export const GET_ALL_CHARGING_STATIONS_DOCS = {
   },
 };
 
-export const GET_NEAR_CHARGING_STATIONS_DOCS = {
+export const GET_NEAR_CHARGING_STATIONS_RESPONSE_DOCS = {
   status: 200,
   description:
     'Gets all charging stations near a location, by parent company ID while grouping by location',
   schema: {
-    type: 'array',
-    items: SINGLE_CHARGING_STATION_SCHEMA,
+    type: 'object',
+    properties: {
+      stations: {
+        type: 'array',
+        items: SINGLE_CHARGING_STATION_SCHEMA,
+      },
+      count: { type: 'number', example: 1 },
+    },
   },
 };
 

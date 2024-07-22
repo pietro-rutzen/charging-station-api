@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { Redis } from 'ioredis';
 import { Model, Types } from 'mongoose';
 import { RedisService } from 'nestjs-redis';
+
 import {
   COMPANY_MODEL,
   ONE_HOUR_IN_SECONDS,

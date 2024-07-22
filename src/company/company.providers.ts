@@ -1,5 +1,6 @@
 import { Provider } from '@nestjs/common';
 import { Connection } from 'mongoose';
+
 import {
   COMPANY_MODEL,
   DATABASE_CONNECTION,
