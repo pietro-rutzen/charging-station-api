@@ -6,7 +6,7 @@ import { RedisService } from 'nestjs-redis';
 import {
   COMPANY_MODEL,
   ONE_HOUR_IN_SECONDS,
-} from 'src/constants/application.constants';
+} from '../constants/application.constants';
 import { Company } from './interfaces/company.interface';
 
 @Injectable()

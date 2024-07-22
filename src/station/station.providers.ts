@@ -4,7 +4,7 @@ import { Connection } from 'mongoose';
 import {
   DATABASE_CONNECTION,
   STATION_MODEL,
-} from 'src/constants/application.constants';
+} from '../constants/application.constants';
 import { StationSchema } from './schemas/station.schema';
 
 export const stationProviders: Provider[] = [

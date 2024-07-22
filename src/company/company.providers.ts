@@ -4,7 +4,7 @@ import { Connection } from 'mongoose';
 import {
   COMPANY_MODEL,
   DATABASE_CONNECTION,
-} from 'src/constants/application.constants';
+} from '../constants/application.constants';
 import { CompanySchema } from './schemas/company.schema';
 
 export const companyProviders: Provider[] = [

@@ -8,12 +8,12 @@ import { encodeBase32 } from 'geohashing';
 import { Redis } from 'ioredis';
 import { Model, Types } from 'mongoose';
 import { RedisService } from 'nestjs-redis';
-import { CompanyService } from 'src/company/company.service';
+import { CompanyService } from '../company/company.service';
 
 import {
   ONE_HOUR_IN_SECONDS,
   STATION_MODEL,
-} from 'src/constants/application.constants';
+} from '../constants/application.constants';
 import { CreateStationDto } from './dto/create-station.dto';
 import { UpdateStationDto } from './dto/update-station.dto';
 import { NearbyStationListItem, Station } from './interfaces/station.interface';

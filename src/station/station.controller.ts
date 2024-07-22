@@ -23,7 +23,7 @@ import {
   RADIUS_QUERY,
   STATION_ID_QUERY,
   UPDATE_CHARGING_STATION_RESPONSE_DOCS,
-} from 'src/constants/swagger.constants';
+} from '../constants/swagger.constants';
 
 import { CreateStationDto } from './dto/create-station.dto';
 import { UpdateStationDto } from './dto/update-station.dto';
