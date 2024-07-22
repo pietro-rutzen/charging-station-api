@@ -1,0 +1,24 @@
+config:
+  target: "http://localhost:3000"
+  phases:
+    - duration: 10
+      arrivalRate: 5
+scenarios:
+  - flow:
+      - get:
+          url: "/station"
+      - get:
+          url: "/station/near"
+          qs:
+            lat: 64.08
+            lng: 26.13
+            radius: 5
+            company_id: "6699719eee1af6da9aa6dc44"
+      - post:
+          url: "/station"
+          json:
+            name: "Charging Station Test"
+            latitude: 64.08
+            longitude: 26.13
+            company_id: "6699719eee1af6da9aa6dc44"
+            address: "Bulevardi 31, 00120 Helsinki"
