@@ -1,6 +1,9 @@
 import { Provider } from '@nestjs/common';
 import { Connection } from 'mongoose';
-import { COMPANY_MODEL, DATABASE_CONNECTION } from 'src/constants';
+import {
+  COMPANY_MODEL,
+  DATABASE_CONNECTION,
+} from 'src/constants/application.constants';
 import { CompanySchema } from './schemas/company.schema';
 
 export const companyProviders: Provider[] = [

@@ -1,6 +1,6 @@
 import { ConfigService } from '@nestjs/config';
 import * as mongoose from 'mongoose';
-import { DATABASE_CONNECTION } from 'src/constants';
+import { DATABASE_CONNECTION } from 'src/constants/application.constants';
 
 export const databaseProviders = [
   {

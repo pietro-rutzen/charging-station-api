@@ -7,3 +7,8 @@ export interface Station extends Document {
   company_id: number;
   address: string;
 }
+
+export interface Location {
+  type: 'Point';
+  coordinates: [number, number];
+}
