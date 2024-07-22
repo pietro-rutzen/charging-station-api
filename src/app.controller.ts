@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller } from '@nestjs/common';
 import Redis from 'ioredis';
 import { RedisService } from 'nestjs-redis';
 import { AppService } from './app.service';
@@ -12,10 +12,5 @@ export class AppController {
     private readonly appService: AppService,
   ) {
     this.redisClient = this.redisService.getClient();
-  }
-
-  @Get()
-  getHello(): string {
-    return this.appService.getHello();
   }
 }
