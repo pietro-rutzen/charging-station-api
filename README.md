@@ -24,7 +24,7 @@ As this is a test, the environment variables are hardcoded in the `docker-compos
 1. **Clone the repository:**
 
    ```sh
-    git clone <https://github.com/pietro-rutzen/charging-station-api>
+    git clone https://github.com/pietro-rutzen/charging-station-api
     cd charging-station-api
     ```
 
